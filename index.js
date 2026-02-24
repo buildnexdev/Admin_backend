@@ -18,8 +18,10 @@ const PORT = process.env.PORT || 5000;
 // Routes
 const usersRoutes = require('./routes/users');
 const homePageImageRoutes = require('./routes/homePageImages');
+const contentRoutes = require('./routes/content');
 app.use('/users', usersRoutes);
 app.use('/home-page', homePageImageRoutes);
+app.use('/content', contentRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {
