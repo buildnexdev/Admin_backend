@@ -6,18 +6,26 @@ const upload = require('../middleware/upload');
 // Project Routes
 router.post('/projects', upload.single('image'), contentController.addProject);
 router.get('/projects/:companyID', contentController.getProjects);
+router.put('/projects/:id', upload.single('image'), contentController.updateProject);
+router.delete('/projects/:id', contentController.deleteProject);
 
 // Banner Routes
 router.post('/banners', upload.single('image'), contentController.addBanner);
 router.get('/banners/:companyID', contentController.getBanners);
+router.put('/banners/:id', upload.single('image'), contentController.updateBanner);
+router.delete('/banners/:id', contentController.deleteBanner);
 
 // Service Routes
 router.post('/services', contentController.addService);
 router.get('/services/:companyID', contentController.getServices);
+router.put('/services/:id', contentController.updateService);
+router.delete('/services/:id', contentController.deleteService);
 
 // Blog Routes
 router.post('/blogs', upload.single('image'), contentController.addBlog);
 router.get('/blogs/:companyID', contentController.getBlogs);
+router.put('/blogs/:id', upload.single('image'), contentController.updateBlog);
+router.delete('/blogs/:id', contentController.deleteBlog);
 
 // Contact Routes
 router.post('/contact', contentController.addContactMessage);
