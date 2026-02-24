@@ -9,7 +9,6 @@ const getImageUrl = (req, filename) => {
     return `${req.protocol}://${req.get('host')}/uploads/${filename}`;
 };
 
-// Generic Create/Read for all modules
 const contentController = {
     // PROJECTS
     addProject: async (req, res) => {
@@ -26,6 +25,27 @@ const contentController = {
         try {
             const projects = await Project.findAll({ where: { companyID: req.params.companyID, isActive: 1 } });
             res.json({ success: true, data: projects });
+        } catch (error) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    },
+    updateProject: async (req, res) => {
+        try {
+            const { title, description, category } = req.body;
+            const updateData = { title, description, category };
+            if (req.file) {
+                updateData.imageUrl = getImageUrl(req, req.file.filename);
+            }
+            await Project.update(updateData, { where: { id: req.params.id } });
+            res.json({ success: true, message: 'Project updated successfully' });
+        } catch (error) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    },
+    deleteProject: async (req, res) => {
+        try {
+            await Project.update({ isActive: 0 }, { where: { id: req.params.id } });
+            res.json({ success: true, message: 'Project deleted successfully' });
         } catch (error) {
             res.status(500).json({ success: false, message: error.message });
         }
@@ -52,6 +72,27 @@ const contentController = {
             res.status(500).json({ success: false, message: error.message });
         }
     },
+    updateBanner: async (req, res) => {
+        try {
+            const { title, subtitle, page } = req.body;
+            const updateData = { title, subtitle, page };
+            if (req.file) {
+                updateData.imageUrl = getImageUrl(req, req.file.filename);
+            }
+            await Banner.update(updateData, { where: { id: req.params.id } });
+            res.json({ success: true, message: 'Banner updated successfully' });
+        } catch (error) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    },
+    deleteBanner: async (req, res) => {
+        try {
+            await Banner.update({ isActive: 0 }, { where: { id: req.params.id } });
+            res.json({ success: true, message: 'Banner deleted successfully' });
+        } catch (error) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    },
 
     // SERVICES
     addService: async (req, res) => {
@@ -67,6 +108,23 @@ const contentController = {
         try {
             const services = await Service.findAll({ where: { companyID: req.params.companyID, isActive: 1 } });
             res.json({ success: true, data: services });
+        } catch (error) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    },
+    updateService: async (req, res) => {
+        try {
+            const { title, description, iconName } = req.body;
+            await Service.update({ title, description, iconName }, { where: { id: req.params.id } });
+            res.json({ success: true, message: 'Service updated successfully' });
+        } catch (error) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    },
+    deleteService: async (req, res) => {
+        try {
+            await Service.update({ isActive: 0 }, { where: { id: req.params.id } });
+            res.json({ success: true, message: 'Service deleted successfully' });
         } catch (error) {
             res.status(500).json({ success: false, message: error.message });
         }
@@ -87,6 +145,27 @@ const contentController = {
         try {
             const blogs = await Blog.findAll({ where: { companyID: req.params.companyID, isActive: 1 } });
             res.json({ success: true, data: blogs });
+        } catch (error) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    },
+    updateBlog: async (req, res) => {
+        try {
+            const { title, content, author } = req.body;
+            const updateData = { title, content, author };
+            if (req.file) {
+                updateData.imageUrl = getImageUrl(req, req.file.filename);
+            }
+            await Blog.update(updateData, { where: { id: req.params.id } });
+            res.json({ success: true, message: 'Blog updated successfully' });
+        } catch (error) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    },
+    deleteBlog: async (req, res) => {
+        try {
+            await Blog.update({ isActive: 0 }, { where: { id: req.params.id } });
+            res.json({ success: true, message: 'Blog deleted successfully' });
         } catch (error) {
             res.status(500).json({ success: false, message: error.message });
         }
