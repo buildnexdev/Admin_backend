@@ -66,7 +66,13 @@ const contentController = {
     },
     getBanners: async (req, res) => {
         try {
-            const banners = await Banner.findAll({ where: { companyID: req.params.companyID, isActive: 1 } });
+            const { companyID } = req.params;
+            const { category } = req.query;
+            const whereClause = { companyID, isActive: 1 };
+            if (category) {
+                whereClause.category = category;
+            }
+            const banners = await Banner.findAll({ where: whereClause });
             res.json({ success: true, data: banners });
         } catch (error) {
             res.status(500).json({ success: false, message: error.message });
@@ -89,6 +95,27 @@ const contentController = {
         try {
             await Banner.update({ isActive: 0 }, { where: { id: req.params.id } });
             res.json({ success: true, message: 'Banner deleted successfully' });
+        } catch (error) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    },
+    saveBannerPaths: async (req, res) => {
+        try {
+            const { bannerPaths, companyID, userId, category } = req.body;
+            if (!bannerPaths || !Array.isArray(bannerPaths)) {
+                return res.status(400).json({ success: false, message: 'bannerPaths must be an array' });
+            }
+
+            const banners = bannerPaths.map(path => ({
+                imageUrl: (path.startsWith('http') || path.startsWith('https')) ? path : getImageUrl(req, path),
+                companyID,
+                userId,
+                category: category || 'HomeBanner',
+                page: 'home'
+            }));
+
+            await Banner.bulkCreate(banners);
+            res.status(201).json({ success: true, message: 'Banners saved successfully' });
         } catch (error) {
             res.status(500).json({ success: false, message: error.message });
         }

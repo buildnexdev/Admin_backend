@@ -24,6 +24,14 @@ const Banner = db.define('Banner', {
         type: DataTypes.BIGINT(20),
         allowNull: false
     },
+    userId: {
+        type: DataTypes.BIGINT(20),
+        allowNull: true
+    },
+    category: {
+        type: DataTypes.STRING(100),
+        allowNull: true
+    },
     page: {
         type: DataTypes.STRING(50),
         defaultValue: 'home'
