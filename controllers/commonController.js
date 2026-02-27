@@ -20,7 +20,7 @@ exports.uploadImageToServer = [
             }
 
             const fileUrl = req.file.location || `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
-            const fileKey = req.file.key || req.file.filename;
+            const fileKey = req.file.key || `uploads/${req.file.filename}`;
 
             console.log('File successfully uploaded:', fileUrl);
 

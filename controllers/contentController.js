@@ -55,7 +55,7 @@ const contentController = {
     addBanner: async (req, res) => {
         try {
             const { title, subtitle, companyID, page } = req.body;
-            const imageUrl = req.file ? getImageUrl(req, req.file.filename) : null;
+            const imageUrl = `${req.file.filename}`;
             if (!imageUrl) return res.status(400).json({ success: false, message: 'Image is required' });
 
             const banner = await Banner.create({ title, subtitle, companyID, page, imageUrl });
@@ -73,6 +73,7 @@ const contentController = {
                 whereClause.category = category;
             }
             const banners = await Banner.findAll({ where: whereClause });
+
             res.json({ success: true, data: banners });
         } catch (error) {
             res.status(500).json({ success: false, message: error.message });
@@ -107,7 +108,7 @@ const contentController = {
             }
 
             const banners = bannerPaths.map(path => ({
-                imageUrl: (path.startsWith('http') || path.startsWith('https')) ? path : getImageUrl(req, path),
+                imageUrl: path,
                 companyID,
                 userId,
                 category: category || 'HomeBanner',
