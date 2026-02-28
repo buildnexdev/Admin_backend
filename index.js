@@ -54,4 +54,4 @@ process.on('unhandledRejection', (reason, promise) => {
 // Keep-alive mechanism
 setInterval(() => {
     console.log('Heartbeat - watching for process exit');
-}, 60000);
+}, 1000000);
