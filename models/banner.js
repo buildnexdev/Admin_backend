@@ -1,7 +1,7 @@
 const { DataTypes } = require('sequelize');
 const db = require('../config/db.config');
 
-const Banner = db.define('Banner', {
+const Banner = db.define('tblBannerImages', {
     id: {
         type: DataTypes.BIGINT(20),
         allowNull: false,
@@ -24,6 +24,14 @@ const Banner = db.define('Banner', {
         type: DataTypes.BIGINT(20),
         allowNull: false
     },
+    userId: {
+        type: DataTypes.BIGINT(20),
+        allowNull: true
+    },
+    category: {
+        type: DataTypes.STRING(100),
+        allowNull: true
+    },
     page: {
         type: DataTypes.STRING(50),
         defaultValue: 'home'
@@ -33,7 +41,7 @@ const Banner = db.define('Banner', {
         defaultValue: 1
     }
 }, {
-    tableName: 'banners',
+    tableName: 'tblBannerImages',
     timestamps: true
 });
 

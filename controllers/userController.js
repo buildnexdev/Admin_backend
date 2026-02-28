@@ -15,11 +15,13 @@ exports.login = async (req, res) => {
             });
         }
 
+        console.log(`[LOGIN TRACE] Attempting to find user with phone: ${phone}`);
         const user = await User.findOne({
             where: {
                 phoneNumber: phone,
             },
         });
+        console.log(`[LOGIN TRACE] Query completed. User found: ${user ? 'Yes' : 'No'}`);
         if (!user) {
             return res.status(404).json({
                 status: false,
@@ -42,6 +44,7 @@ exports.login = async (req, res) => {
             { expiresIn: "7d" }
         );
 
+        console.log(`[LOGIN TRACE] Successful login for user: ${user.name}`);
         res.status(200).json({
             status: true,
             message: "Login successful",
