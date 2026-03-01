@@ -42,7 +42,9 @@ const Banner = db.define('tblBannerImages', {
     }
 }, {
     tableName: 'tblBannerImages',
-    timestamps: true
+    timestamps: true,
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
 });
 
 module.exports = Banner;

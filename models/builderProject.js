@@ -1,8 +1,8 @@
 const { DataTypes } = require('sequelize');
 const db = require('../config/db.config');
 
-const Service = db.define('Service', {
-    id: {
+const BuilderProject = db.define('builder_projects', {
+    projectId: {
         type: DataTypes.BIGINT(20),
         allowNull: false,
         primaryKey: true,
@@ -10,43 +10,44 @@ const Service = db.define('Service', {
     },
     title: {
         type: DataTypes.STRING(255),
-        allowNull: true
-    },
-    name: {
-        type: DataTypes.STRING(255),
-        allowNull: true
+        allowNull: false
     },
     description: {
         type: DataTypes.TEXT,
         allowNull: true
     },
-    imageUrl: {
-        type: DataTypes.STRING(255),
-        allowNull: true
-    },
-    iconName: {
-        type: DataTypes.STRING(100),
-        allowNull: true
-    },
     category: {
         type: DataTypes.STRING(100),
-        allowNull: true
-    },
-    userId: {
-        type: DataTypes.BIGINT(20),
-        allowNull: true
+        allowNull: false
     },
     companyID: {
         type: DataTypes.BIGINT(20),
         allowNull: false
     },
+    userId: {
+        type: DataTypes.BIGINT(20),
+        allowNull: false
+    },
+    fileUrl: {
+        type: DataTypes.STRING(255),
+        allowNull: true
+    },
     isActive: {
-        type: DataTypes.TINYINT(1),
+        type: DataTypes.TINYINT(4),
+        allowNull: false,
         defaultValue: 1
+    },
+    createdOn: {
+        type: DataTypes.DATE,
+        allowNull: false
+    },
+    updatedOn: {
+        type: DataTypes.DATE,
+        allowNull: false
     }
 }, {
-    tableName: 'services',
-    timestamps: true
+    tableName: 'builder_projects',
+    timestamps: false
 });
 
-module.exports = Service;
+module.exports = BuilderProject;

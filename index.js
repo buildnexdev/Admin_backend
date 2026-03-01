@@ -19,10 +19,12 @@ const PORT = process.env.PORT || 5000;
 const usersRoutes = require('./routes/users');
 const homePageImageRoutes = require('./routes/homePageImages');
 const contentRoutes = require('./routes/content');
+const activeRoutes = require('./routes/active');
 const commonRoutes = require('./routes/common');
 const bannersRoutes = require('./routes/banners');
 
 app.use('/users', usersRoutes);
+app.use('/active', activeRoutes);
 app.use('/home-page', homePageImageRoutes);
 app.use('/content', contentRoutes);
 app.use('/_common', commonRoutes); // Keep this for backward compatibility if any

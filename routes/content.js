@@ -12,13 +12,15 @@ router.delete('/projects/:id', contentController.deleteProject);
 // Banner Routes
 router.post('/banners', upload.single('image'), contentController.addBanner);
 router.get('/banners/:companyID', contentController.getBanners);
+// PATCH without multer: use for JSON-only updates (e.g. isActive) so body is not consumed
+router.patch('/banners/:id', contentController.updateBanner);
 router.put('/banners/:id', upload.single('image'), contentController.updateBanner);
 router.delete('/banners/:id', contentController.deleteBanner);
 
 // Service Routes
-router.post('/services', contentController.addService);
+router.post('/services', upload.single('image'), contentController.addService);
 router.get('/services/:companyID', contentController.getServices);
-router.put('/services/:id', contentController.updateService);
+router.put('/services/:id', upload.single('image'), contentController.updateService);
 router.delete('/services/:id', contentController.deleteService);
 
 // Blog Routes

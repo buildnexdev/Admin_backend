@@ -44,12 +44,27 @@ exports.login = async (req, res) => {
             { expiresIn: "7d" }
         );
 
+        // Plain object with all user fields; exclude password from response
+        const plain = user.get ? user.get({ plain: true }) : user.toJSON ? user.toJSON() : user;
+        const { password: _p, ...userDetails } = plain;
+
         console.log(`[LOGIN TRACE] Successful login for user: ${user.name}`);
         res.status(200).json({
             status: true,
             message: "Login successful",
             token,
-            data: user,
+            data: {
+                userId: userDetails.userId,
+                name: userDetails.name,
+                phoneNumber: userDetails.phoneNumber,
+                companyID: userDetails.companyID,
+                location: userDetails.location,
+                isActive: userDetails.isActive,
+                createdOn: userDetails.createdOn,
+                updatedOn: userDetails.updatedOn,
+                role: userDetails.role,
+                category: userDetails.category,
+            },
         });
     } catch (error) {
         console.error("Login Error:", error.message);
