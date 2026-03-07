@@ -20,16 +20,20 @@ const usersRoutes = require('./routes/users');
 const homePageImageRoutes = require('./routes/homePageImages');
 const contentRoutes = require('./routes/content');
 const activeRoutes = require('./routes/active');
+const quotationRoutes = require('./routes/quotation');
 const commonRoutes = require('./routes/common');
 const bannersRoutes = require('./routes/banners');
+const menuRoutes = require('./routes/menu');
 
 app.use('/users', usersRoutes);
 app.use('/active', activeRoutes);
+app.use('/quotation', quotationRoutes);
 app.use('/home-page', homePageImageRoutes);
 app.use('/content', contentRoutes);
 app.use('/_common', commonRoutes); // Keep this for backward compatibility if any
 app.use('/', commonRoutes); // Add this to support the root-level call
 app.use('/banners', bannersRoutes);
+app.use('/menu', menuRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {

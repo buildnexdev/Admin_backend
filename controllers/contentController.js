@@ -62,7 +62,10 @@ const contentController = {
     },
     deleteProject: async (req, res) => {
         try {
-            await Project.update({ isActive: 0 }, { where: { id: req.params.id } });
+            const deleted = await Project.destroy({ where: { id: req.params.id } });
+            if (!deleted) {
+                return res.status(404).json({ success: false, message: 'Project not found' });
+            }
             res.json({ success: true, message: 'Project deleted successfully' });
         } catch (error) {
             res.status(500).json({ success: false, message: error.message });
@@ -159,7 +162,12 @@ const contentController = {
     },
     deleteBanner: async (req, res) => {
         try {
-            await Banner.update({ isActive: 0 }, { where: { id: req.params.id } });
+            const id = req.params.id;
+            const deleted = await Banner.destroy({ where: { id } });
+            if (!deleted) {
+                // If destroy fails (maybe due to unscoped issues), try raw SQL
+                await db.query('DELETE FROM `tblBannerImages` WHERE id = ?', { replacements: [id] });
+            }
             res.json({ success: true, message: 'Banner deleted successfully' });
         } catch (error) {
             res.status(500).json({ success: false, message: error.message });
@@ -254,7 +262,10 @@ const contentController = {
     },
     deleteService: async (req, res) => {
         try {
-            await Service.update({ isActive: 0 }, { where: { id: req.params.id } });
+            const deleted = await Service.destroy({ where: { id: req.params.id } });
+            if (!deleted) {
+                return res.status(404).json({ success: false, message: 'Service not found' });
+            }
             res.json({ success: true, message: 'Service deleted successfully' });
         } catch (error) {
             res.status(500).json({ success: false, message: error.message });
@@ -328,7 +339,10 @@ const contentController = {
     },
     deleteBlog: async (req, res) => {
         try {
-            await Blog.update({ isActive: 0 }, { where: { id: req.params.id } });
+            const deleted = await Blog.destroy({ where: { id: req.params.id } });
+            if (!deleted) {
+                return res.status(404).json({ success: false, message: 'Blog not found' });
+            }
             res.json({ success: true, message: 'Blog deleted successfully' });
         } catch (error) {
             res.status(500).json({ success: false, message: error.message });
