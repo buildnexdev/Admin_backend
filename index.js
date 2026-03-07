@@ -33,6 +33,7 @@ app.use('/content', contentRoutes);
 app.use('/_common', commonRoutes); // Keep this for backward compatibility if any
 app.use('/', commonRoutes); // Add this to support the root-level call
 app.use('/banners', bannersRoutes);
+// menu routes
 app.use('/menu', menuRoutes);
 
 // Root endpoint
