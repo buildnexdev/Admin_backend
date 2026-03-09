@@ -15,6 +15,9 @@ router.post('/:id/view', quotationController.viewQuotation);
 // List all quotations for company (admin)
 router.get('/list/:companyID', quotationController.listQuotations);
 
+// Stats: view count for UI (must be before /:id)
+router.get('/:id/stats', quotationController.getQuotationStats);
+
 // Get single quotation by id (admin / fallback - has link_click_count)
 router.get('/:id', quotationController.getQuotationById);
 

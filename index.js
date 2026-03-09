@@ -24,6 +24,7 @@ const quotationRoutes = require('./routes/quotation');
 const commonRoutes = require('./routes/common');
 const bannersRoutes = require('./routes/banners');
 const menuRoutes = require('./routes/menu');
+const categoryRoutes = require('./routes/category');
 
 app.use('/users', usersRoutes);
 app.use('/active', activeRoutes);
@@ -35,6 +36,7 @@ app.use('/', commonRoutes); // Add this to support the root-level call
 app.use('/banners', bannersRoutes);
 // menu routes
 app.use('/menu', menuRoutes);
+app.use('/category', categoryRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {
