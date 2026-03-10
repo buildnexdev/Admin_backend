@@ -190,6 +190,27 @@ exports.getQuotationStats = async (req, res) => {
     }
 };
 
+/** GET /quotation/stats/:token - Stats by token only (use this from frontend to avoid 404) */
+exports.getQuotationStatsByToken = async (req, res) => {
+    try {
+        const token = req.params.token;
+        if (!token) {
+            return res.status(400).json({ success: false, message: 'Token is required' });
+        }
+        const quotation = await Quotation.findOne({
+            where: { token },
+            attributes: ['id', 'token', 'link_click_count']
+        });
+        if (!quotation) {
+            return res.status(404).json({ success: false, message: 'Quotation not found' });
+        }
+        const count = quotation.link_click_count ?? 0;
+        res.json({ success: true, count, link_click_count: count, viewCount: count });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 exports.getQuotationById = async (req, res) => {
     try {
         const param = req.params.id;

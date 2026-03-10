@@ -6,19 +6,21 @@ const quotationController = require('../controllers/quotationController');
 // GET /quotation?userId=1&category=Builders&companyID=1
 router.get('/', quotationController.getQuotationsByQuery);
 
-// Client link (when client clicks link, count increments)
-router.get('/view/:id', quotationController.viewQuotation);
-// Also support /:id/view format and POST method for API
-router.get('/:id/view', quotationController.viewQuotation);
-router.post('/:id/view', quotationController.viewQuotation);
-
 // List all quotations for company (admin)
 router.get('/list/:companyID', quotationController.listQuotations);
 
-// Stats: view count for UI (must be before /:id)
+// Stats by token (recommended: no conflict with :id) - GET /quotation/stats/7f5a7020-ab99-4c17-a260-9eccbe35f1e0
+router.get('/stats/:token', quotationController.getQuotationStatsByToken);
+
+// Client link (when client clicks link, count increments)
+router.get('/view/:id', quotationController.viewQuotation);
+router.get('/:id/view', quotationController.viewQuotation);
+router.post('/:id/view', quotationController.viewQuotation);
+
+// Stats by id or token - GET /quotation/:id/stats
 router.get('/:id/stats', quotationController.getQuotationStats);
 
-// Get single quotation by id (admin / fallback - has link_click_count)
+// Get single quotation by id or token (admin / fallback)
 router.get('/:id', quotationController.getQuotationById);
 
 // Update quotation

@@ -112,9 +112,9 @@ const contentController = {
             if (isNaN(id)) {
                 return res.status(400).json({ success: false, message: 'Invalid banner id' });
             }
-            // Support both camelCase and snake_case from frontend
-            const { title, subtitle, page, userId, category } = req.body;
-            const isActiveRaw = req.body.isActive !== undefined ? req.body.isActive : req.body.is_active;
+            const body = req.body || {};
+            const { title, subtitle, page, userId, category } = body;
+            const isActiveRaw = body.isActive !== undefined ? body.isActive : body.is_active;
             const updateData = {};
             if (title !== undefined) updateData.title = title;
             if (subtitle !== undefined) updateData.subtitle = subtitle;
@@ -127,7 +127,9 @@ const contentController = {
                 updateData.isActive = (v === 0 || v === '0' || v === false || String(v).toLowerCase() === 'false') ? 0 : 1;
             }
             if (req.file) {
-                updateData.imageUrl = getImageUrl(req, req.file.filename);
+                updateData.imageUrl = req.file.filename;
+            } else if (body.imagePath !== undefined || body.imageUrl !== undefined || body.image !== undefined) {
+                updateData.imageUrl = body.imagePath || body.imageUrl || body.image;
             }
             if (Object.keys(updateData).length === 0) {
                 return res.status(400).json({ success: false, message: 'No fields to update' });
@@ -245,6 +247,9 @@ const contentController = {
             if (body.category !== undefined) updateData.category = body.category;
             if (body.userId !== undefined) updateData.userId = body.userId === '' ? null : parseInt(body.userId, 10);
             if (req.file) updateData.imageUrl = req.file.filename;
+            else if (body.imagePath !== undefined || body.imageUrl !== undefined || body.image !== undefined) {
+                updateData.imageUrl = body.imagePath || body.imageUrl || body.image;
+            }
             const isActiveRaw = body.isActive !== undefined ? body.isActive : body.is_active;
             if (isActiveRaw !== undefined && isActiveRaw !== null && isActiveRaw !== '') {
                 const v = isActiveRaw;
