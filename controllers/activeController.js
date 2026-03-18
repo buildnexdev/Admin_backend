@@ -2,6 +2,7 @@ const Banner = require('../models/banner');
 const Project = require('../models/project');
 const Service = require('../models/service');
 const Blog = require('../models/blog');
+const SrsImage = require('../models/srsImage');
 
 /**
  * GET APIs - active items only (isActive: 1)

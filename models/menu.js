@@ -56,6 +56,11 @@ const Menu = db.define('Menu', {
         type: DataTypes.TINYINT(4),
         allowNull: false,
         defaultValue: 0
+    },
+    srsImages: {
+        type: DataTypes.TINYINT(4),
+        allowNull: false,
+        defaultValue: 0
     }
 }, {
     tableName: 'menu',

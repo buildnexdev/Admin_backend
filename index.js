@@ -27,8 +27,10 @@ const commonRoutes = require('./routes/common');
 const bannersRoutes = require('./routes/banners');
 const menuRoutes = require('./routes/menu');
 const categoryRoutes = require('./routes/category');
+const srsImagesRoutes = require('./routes/srsImages');
 
 app.use('/users', usersRoutes);
+app.use('/srs-images', srsImagesRoutes);
 app.use('/active', activeRoutes);
 app.use('/quotation', quotationRoutes);
 app.use('/home-page', homePageImageRoutes);
