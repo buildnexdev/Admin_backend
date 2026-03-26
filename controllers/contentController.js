@@ -4,6 +4,7 @@ const Banner = require('../models/banner');
 const Service = require('../models/service');
 const Blog = require('../models/blog');
 const ContactMessage = require('../models/contact');
+const Review = require('../models/review');
 
 // Helper for image URL
 const getImageUrl = (req, filename) => {
@@ -368,6 +369,66 @@ const contentController = {
         try {
             const messages = await ContactMessage.findAll({ where: { companyID: req.params.companyID } });
             res.json({ success: true, data: messages });
+        } catch (error) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    },
+
+    // REVIEWS
+    addReview: async (req, res) => {
+        try {
+            const { reviewerName, rating, reviewText, socialLink, companyID, userId } = req.body;
+            if (!companyID) {
+                return res.status(400).json({ success: false, message: 'companyID is required' });
+            }
+            const review = await Review.create({
+                reviewerName,
+                rating,
+                reviewText,
+                socialLink,
+                companyID,
+                userId: userId || null
+            });
+            res.status(201).json({ success: true, data: review });
+        } catch (error) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    },
+    getReviews: async (req, res) => {
+        try {
+            const reviews = await Review.findAll({ where: { companyID: req.query.companyID || req.params.companyID } });
+            res.json({ success: true, data: reviews });
+        } catch (error) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    },
+    updateReview: async (req, res) => {
+        try {
+            const body = req.body || {};
+            const updateData = {};
+            if (body.reviewerName !== undefined) updateData.reviewerName = body.reviewerName;
+            if (body.rating !== undefined) updateData.rating = body.rating;
+            if (body.reviewText !== undefined) updateData.reviewText = body.reviewText;
+            if (body.socialLink !== undefined) updateData.socialLink = body.socialLink;
+            if (body.isActive !== undefined) updateData.isActive = body.isActive;
+
+            if (Object.keys(updateData).length === 0) {
+                return res.status(400).json({ success: false, message: 'No fields to update' });
+            }
+            await Review.update(updateData, { where: { id: req.params.id } });
+            const review = await Review.findByPk(req.params.id);
+            res.json({ success: true, message: 'Review updated successfully', data: review });
+        } catch (error) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    },
+    deleteReview: async (req, res) => {
+        try {
+            const deleted = await Review.destroy({ where: { id: req.params.id } });
+            if (!deleted) {
+                return res.status(404).json({ success: false, message: 'Review not found' });
+            }
+            res.json({ success: true, message: 'Review deleted successfully' });
         } catch (error) {
             res.status(500).json({ success: false, message: error.message });
         }

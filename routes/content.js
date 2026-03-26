@@ -33,4 +33,11 @@ router.delete('/blogs/:id', contentController.deleteBlog);
 router.post('/contact', contentController.addContactMessage);
 router.get('/contact/:companyID', contentController.getContactMessages);
 
+// Review Routes
+router.post('/reviews', contentController.addReview);
+router.get('/reviews', contentController.getReviews);
+router.get('/reviews/:companyID', contentController.getReviews);
+router.put('/reviews/:id', contentController.updateReview);
+router.delete('/reviews/:id', contentController.deleteReview);
+
 module.exports = router;
