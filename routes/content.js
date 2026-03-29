@@ -40,4 +40,10 @@ router.get('/reviews/:companyID', contentController.getReviews);
 router.put('/reviews/:id', contentController.updateReview);
 router.delete('/reviews/:id', contentController.deleteReview);
 
+// Team Member Routes
+router.post('/team-members', upload.single('image'), contentController.addTeamMember);
+router.get('/team-members/:companyID', contentController.getTeamMembers);
+router.put('/team-members/:id', upload.single('image'), contentController.updateTeamMember);
+router.delete('/team-members/:id', contentController.deleteTeamMember);
+
 module.exports = router;

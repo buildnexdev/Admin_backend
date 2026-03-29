@@ -5,6 +5,8 @@ const Service = require('../models/service');
 const Blog = require('../models/blog');
 const ContactMessage = require('../models/contact');
 const Review = require('../models/review');
+const TeamMember = require('../models/team_member');
+
 
 // Helper for image URL
 const getImageUrl = (req, filename) => {
@@ -432,7 +434,63 @@ const contentController = {
         } catch (error) {
             res.status(500).json({ success: false, message: error.message });
         }
+    },
+
+    // TEAM MEMBERS
+    addTeamMember: async (req, res) => {
+        try {
+            const { name, designation, bio, phoneNumber, tags, companyID } = req.body;
+            const imageUrl = req.file ? req.file.filename : (req.body.imageUrl || null);
+            if (!companyID) return res.status(400).json({ success: false, message: 'companyID is required' });
+            const member = await TeamMember.create({ name, designation, bio, phoneNumber, tags, companyID, imageUrl });
+            res.status(201).json({ success: true, data: member });
+        } catch (error) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    },
+    getTeamMembers: async (req, res) => {
+        try {
+            const { companyID } = req.params;
+            const members = await TeamMember.findAll({ where: { companyID } });
+            res.json({ success: true, data: members });
+        } catch (error) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    },
+    updateTeamMember: async (req, res) => {
+        try {
+            const updateData = {};
+            const { name, designation, bio, phoneNumber, tags, isActive } = req.body;
+            if (name !== undefined) updateData.name = name;
+            if (designation !== undefined) updateData.designation = designation;
+            if (bio !== undefined) updateData.bio = bio;
+            if (phoneNumber !== undefined) updateData.phoneNumber = phoneNumber;
+            if (tags !== undefined) updateData.tags = tags;
+            if (isActive !== undefined) updateData.isActive = isActive;
+
+            if (req.file) {
+                updateData.imageUrl = req.file.filename;
+            } else if (req.body.imageUrl !== undefined) {
+                updateData.imageUrl = req.body.imageUrl;
+            }
+
+            await TeamMember.update(updateData, { where: { id: req.params.id } });
+            const member = await TeamMember.findByPk(req.params.id);
+            res.json({ success: true, data: member });
+        } catch (error) {
+            res.status(500).json({ success: false, message: error.message });
+        }
+    },
+    deleteTeamMember: async (req, res) => {
+        try {
+            const deleted = await TeamMember.destroy({ where: { id: req.params.id } });
+            if (!deleted) return res.status(404).json({ success: false, message: 'Member not found' });
+            res.json({ success: true, message: 'Member deleted successfully' });
+        } catch (error) {
+            res.status(500).json({ success: false, message: error.message });
+        }
     }
 };
+
 
 module.exports = contentController;

@@ -61,6 +61,16 @@ const Menu = db.define('Menu', {
         type: DataTypes.TINYINT(4),
         allowNull: false,
         defaultValue: 0
+    },
+    srsteampage: {
+        type: DataTypes.TINYINT(4),
+        allowNull: false,
+        defaultValue: 0
+    },
+    googlereview: {
+        type: DataTypes.TINYINT(4),
+        allowNull: false,
+        defaultValue: 0
     }
 }, {
     tableName: 'menu',

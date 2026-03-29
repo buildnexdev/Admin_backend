@@ -48,6 +48,10 @@ exports.login = async (req, res) => {
         const plain = user.get ? user.get({ plain: true }) : user.toJSON ? user.toJSON() : user;
         const { password: _p, ...userDetails } = plain;
 
+        // Get company name
+        const Company = require('../models/company');
+        const company = await Company.findByPk(userDetails.companyID);
+
         console.log(`[LOGIN TRACE] Successful login for user: ${user.name}`);
         res.status(200).json({
             status: true,
@@ -58,6 +62,7 @@ exports.login = async (req, res) => {
                 name: userDetails.name,
                 phoneNumber: userDetails.phoneNumber,
                 companyID: userDetails.companyID,
+                companyName: company ? company.name : 'Corporate Office',
                 location: userDetails.location,
                 isActive: userDetails.isActive,
                 createdOn: userDetails.createdOn,
@@ -73,5 +78,16 @@ exports.login = async (req, res) => {
             message: "Failed to login",
             error: error.message,
         });
+    }
+};
+
+exports.getStaff = async (req, res) => {
+    try {
+        const users = await User.findAll({
+            attributes: ['userId', 'name', 'role', 'phoneNumber']
+        });
+        res.status(200).json({ status: true, data: users });
+    } catch (error) {
+        res.status(500).json({ status: false, message: error.message });
     }
 };
