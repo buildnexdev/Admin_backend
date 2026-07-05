@@ -1,10 +1,15 @@
 const { Sequelize } = require('sequelize');
 
-const db = new Sequelize('admin_panel', 'root', 'root', {
-    host: '127.0.0.1',
-    port: 8889,
-    dialect: 'mysql',
-});
+const db = new Sequelize(
+    process.env.DB_NAME || 'admin_panel',
+    process.env.DB_USER || 'root',
+    process.env.DB_PASS || 'root',
+    {
+        host: process.env.DB_HOST || '127.0.0.1',
+        port: process.env.DB_PORT || 8889,
+        dialect: process.env.DB_DIALECT || 'mysql',
+    }
+);
 
 const connectDB = async () => {
     try {
