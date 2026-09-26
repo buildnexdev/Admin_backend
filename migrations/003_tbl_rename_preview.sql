@@ -1,0 +1,24 @@
+-- =============================================================================
+-- 003_tbl_rename_preview.sql
+-- COMMENTED-OUT rename statements for future use. DO NOT EXECUTE.
+-- See 003_tbl_rename_map.md — deferred until after RBAC stable; dual-write not started.
+-- =============================================================================
+
+-- RENAME TABLE `user` TO `tblUser`;
+-- RENAME TABLE `company` TO `tblCompany`;
+-- RENAME TABLE `categories` TO `tblCategory`;
+-- RENAME TABLE `projects` TO `tblProject`;
+-- RENAME TABLE `builder_projects` TO `tblBuilderProject`;
+-- RENAME TABLE `tblBannerImages` TO `tblBanner`;
+-- RENAME TABLE `services` TO `tblService`;
+-- RENAME TABLE `blogs` TO `tblBlog`;
+-- RENAME TABLE `contact_messages` TO `tblContactMessage`;
+-- RENAME TABLE `reviews` TO `tblReview`;
+-- RENAME TABLE `team_members` TO `tblTeamMember`;
+-- RENAME TABLE `quotations` TO `tblQuotation`;
+-- RENAME TABLE `menu` TO `tblMenu`;
+-- RENAME TABLE `home_page_images` TO `tblHomePageImage`;
+-- RENAME TABLE `srs_images` TO `tblSrsImage`;
+
+-- RBAC tables already use tbl* — no rename:
+--   tblRole, tblPermission, tblRolePermission, tblUserRole, tblAuditLog

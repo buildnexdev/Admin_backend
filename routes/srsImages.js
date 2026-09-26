@@ -2,23 +2,15 @@ const express = require('express');
 const router = express.Router();
 const upload = require('../middleware/upload');
 const srsImageController = require('../controllers/srsImageController');
+const { authenticate, requireCompanyAccess } = require('../middleware/auth');
 
-// GET /srs-images/all - get all SRS images
-router.get('/all', srsImageController.getAllSrsImages);
+router.use(authenticate);
 
-// GET /srs-images?companyID=1&userId=1
-router.get('/', srsImageController.getSrsImages);
-
-// GET /srs-images/:id
-router.get('/:id', srsImageController.getSrsImageById);
-
-// POST /srs-images (payload: companyID, userId; optional: file or imagePath)
-router.post('/', upload.any(), srsImageController.addSrsImage);
-
-// PUT /srs-images/:id
-router.put('/:id', upload.any(), srsImageController.updateSrsImage);
-
-// DELETE /srs-images/:id
-router.delete('/:id', srsImageController.deleteSrsImage);
+router.get('/all', requireCompanyAccess, srsImageController.getAllSrsImages);
+router.get('/', requireCompanyAccess, srsImageController.getSrsImages);
+router.get('/:id', requireCompanyAccess, srsImageController.getSrsImageById);
+router.post('/', requireCompanyAccess, upload.any(), srsImageController.addSrsImage);
+router.put('/:id', requireCompanyAccess, upload.any(), srsImageController.updateSrsImage);
+router.delete('/:id', requireCompanyAccess, srsImageController.deleteSrsImage);
 
 module.exports = router;

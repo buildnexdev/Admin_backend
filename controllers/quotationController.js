@@ -1,5 +1,6 @@
 const Quotation = require('../models/quotation');
 const { v4: uuidv4 } = require('uuid');
+const { isSuperAdmin, tenantWhere, resolveCreateCompanyID } = require('../utils/tenant');
 
 /**
  * POST /quotation - Create a new quotation
@@ -10,7 +11,7 @@ exports.createQuotation = async (req, res) => {
         const body = req.body || {};
         const category = body.category;
         const client_name = body.client_name;
-        const companyID = body.companyID;
+        const companyID = resolveCreateCompanyID(req, body.companyID);
         const userId = body.userId;
         const price = body.price !== undefined && body.price !== '' ? parseFloat(body.price) : null;
         const project_details = body.project_details;
@@ -79,11 +80,25 @@ exports.viewQuotation = async (req, res) => {
  */
 exports.getQuotationsByQuery = async (req, res) => {
     try {
-        const { companyID, userId, category } = req.query;
+        const { userId, category } = req.query;
+        let { companyID } = req.query;
+
+        if (!isSuperAdmin(req)) {
+            companyID = req.auth?.companyID;
+        } else if (companyID === undefined || companyID === '') {
+            companyID = undefined;
+        }
+
         const where = {};
         if (companyID !== undefined && companyID !== '') where.companyID = companyID;
         if (userId !== undefined && userId !== '') where.userId = userId;
         if (category !== undefined && category !== '') where.category = category;
+
+        // Non-super_admin must never get unscoped findAll
+        if (!isSuperAdmin(req) && !where.companyID) {
+            return res.status(400).json({ success: false, message: 'companyID is required' });
+        }
+
         const quotations = await Quotation.findAll({
             where: Object.keys(where).length ? where : undefined,
             order: [['createdAt', 'DESC']]
@@ -107,7 +122,10 @@ exports.getQuotationsByQuery = async (req, res) => {
  */
 exports.listQuotations = async (req, res) => {
     try {
-        const companyID = req.params.companyID;
+        let companyID = req.params.companyID;
+        if (!isSuperAdmin(req)) {
+            companyID = req.auth?.companyID;
+        }
         const quotations = await Quotation.findAll({
             where: { companyID },
             order: [['createdAt', 'DESC']]
@@ -176,9 +194,14 @@ exports.getQuotationStats = async (req, res) => {
         const param = req.params.id;  // could be token string or numeric id
         const isNumeric = /^\d+$/.test(param);
 
-        const quotation = isNumeric
-            ? await Quotation.findByPk(parseInt(param, 10), { attributes: ['id', 'link_click_count'] })
-            : await Quotation.findOne({ where: { token: param }, attributes: ['id', 'link_click_count'] });
+        const where = isNumeric
+            ? tenantWhere(req, { id: parseInt(param, 10) })
+            : tenantWhere(req, { token: param });
+
+        const quotation = await Quotation.findOne({
+            where,
+            attributes: ['id', 'link_click_count']
+        });
 
         if (!quotation) {
             return res.status(404).json({ success: false, message: 'Quotation not found' });
@@ -216,9 +239,11 @@ exports.getQuotationById = async (req, res) => {
         const param = req.params.id;
         const isNumeric = /^\d+$/.test(param);
 
-        const quotation = isNumeric
-            ? await Quotation.findByPk(parseInt(param, 10))
-            : await Quotation.findOne({ where: { token: param } });
+        const where = isNumeric
+            ? tenantWhere(req, { id: parseInt(param, 10) })
+            : tenantWhere(req, { token: param });
+
+        const quotation = await Quotation.findOne({ where });
 
         if (!quotation) {
             return res.status(404).json({ success: false, message: 'Quotation not found' });
@@ -243,9 +268,18 @@ exports.updateQuotation = async (req, res) => {
     try {
         const param = req.params.id;
         const isNumeric = /^\d+$/.test(param);
-        const where = isNumeric ? { id: parseInt(param, 10) } : { token: param };
+        const where = isNumeric
+            ? tenantWhere(req, { id: parseInt(param, 10) })
+            : tenantWhere(req, { token: param });
 
-        const [updated] = await Quotation.update(req.body, { where });
+        // Prevent companyID reassignment by non-super_admin
+        const updateBody = { ...req.body };
+        if (!isSuperAdmin(req)) {
+            delete updateBody.companyID;
+            delete updateBody.companyId;
+        }
+
+        const [updated] = await Quotation.update(updateBody, { where });
 
         if (!updated) {
             return res.status(404).json({ success: false, message: 'Quotation not found or no changes made' });
@@ -266,7 +300,9 @@ exports.deleteQuotation = async (req, res) => {
     try {
         const param = req.params.id;
         const isNumeric = /^\d+$/.test(param);
-        const where = isNumeric ? { id: parseInt(param, 10) } : { token: param };
+        const where = isNumeric
+            ? tenantWhere(req, { id: parseInt(param, 10) })
+            : tenantWhere(req, { token: param });
 
         const deleted = await Quotation.destroy({ where });
 

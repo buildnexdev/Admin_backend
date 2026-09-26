@@ -28,10 +28,13 @@ exports.getMenuByCompanyID = async (req, res) => {
  */
 exports.getAllMenus = async (req, res) => {
     try {
-        const menus = await Menu.findAll();
+        const role = String(req.auth?.role || '').toLowerCase();
+        // Non-super-admins only see their own company menu row
+        const where = role === 'super_admin' ? {} : { companyID: req.auth.companyID };
+        const menus = await Menu.findAll({ where });
         res.json({ success: true, data: menus });
     } catch (error) {
         console.error('getAllMenus error:', error);
-        res.status(500).json({ success: false, message: error.message });
+        res.status(500).json({ success: false, message: 'Failed to load menus' });
     }
 };

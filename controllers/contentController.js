@@ -6,6 +6,7 @@ const Blog = require('../models/blog');
 const ContactMessage = require('../models/contact');
 const Review = require('../models/review');
 const TeamMember = require('../models/team_member');
+const { isSuperAdmin, tenantWhere, resolveCreateCompanyID } = require('../utils/tenant');
 
 
 // Helper for image URL
@@ -18,7 +19,11 @@ const contentController = {
     addProject: async (req, res) => {
         try {
             const body = req.body || {};
-            const { title, description, category, companyID } = body;
+            const { title, description, category } = body;
+            const companyID = resolveCreateCompanyID(req, body.companyID);
+            if (companyID == null) {
+                return res.status(400).json({ success: false, message: 'companyID is required' });
+            }
             const imageUrl = req.file
                 ? req.file.filename
                 : (body.imagePath || body.imageUrl || null);
@@ -30,7 +35,11 @@ const contentController = {
     },
     getProjects: async (req, res) => {
         try {
-            const projects = await Project.findAll({ where: { companyID: req.params.companyID } });
+            let companyID = req.params.companyID;
+            if ((companyID == null || companyID === '') && req.auth && !isSuperAdmin(req)) {
+                companyID = req.auth.companyID;
+            }
+            const projects = await Project.findAll({ where: { companyID } });
             res.json({ success: true, data: projects });
         } catch (error) {
             res.status(500).json({ success: false, message: error.message });
@@ -56,8 +65,12 @@ const contentController = {
             if (Object.keys(updateData).length === 0) {
                 return res.status(400).json({ success: false, message: 'No fields to update' });
             }
-            await Project.update(updateData, { where: { id: req.params.id } });
-            const project = await Project.findByPk(req.params.id);
+            const where = tenantWhere(req, { id: req.params.id });
+            const [updated] = await Project.update(updateData, { where });
+            if (!updated) {
+                return res.status(404).json({ success: false, message: 'Project not found' });
+            }
+            const project = await Project.findOne({ where });
             res.json({ success: true, message: 'Project updated successfully', data: project });
         } catch (error) {
             res.status(500).json({ success: false, message: error.message });
@@ -65,7 +78,8 @@ const contentController = {
     },
     deleteProject: async (req, res) => {
         try {
-            const deleted = await Project.destroy({ where: { id: req.params.id } });
+            const where = tenantWhere(req, { id: req.params.id });
+            const deleted = await Project.destroy({ where });
             if (!deleted) {
                 return res.status(404).json({ success: false, message: 'Project not found' });
             }
@@ -78,7 +92,11 @@ const contentController = {
     // BANNERS
     addBanner: async (req, res) => {
         try {
-            const { title, subtitle, companyID, page, imagePath, userId, category } = req.body;
+            const { title, subtitle, page, imagePath, userId, category } = req.body;
+            const companyID = resolveCreateCompanyID(req, req.body.companyID);
+            if (companyID == null) {
+                return res.status(400).json({ success: false, message: 'companyID is required' });
+            }
             const imageUrl = req.file
                 ? req.file.filename
                 : (imagePath || req.body.imageUrl || null);
@@ -95,7 +113,10 @@ const contentController = {
     },
     getBanners: async (req, res) => {
         try {
-            const { companyID } = req.params;
+            let { companyID } = req.params;
+            if ((companyID == null || companyID === '') && req.auth && !isSuperAdmin(req)) {
+                companyID = req.auth.companyID;
+            }
             const { category } = req.query;
             const whereClause = { companyID };
             if (category) {
@@ -141,25 +162,33 @@ const contentController = {
             if (isActiveValue !== undefined) {
                 delete updateData.isActive;
             }
-            // Check banner exists first
-            const existing = await Banner.unscoped().findByPk(id);
+            const where = tenantWhere(req, { id });
+            // Check banner exists first (tenant-scoped)
+            const existing = await Banner.unscoped().findOne({ where });
             if (!existing) {
                 return res.status(404).json({ success: false, message: 'Banner not found', id });
             }
             // Persist isActive with raw SQL so it always writes to DB (avoids Sequelize column/cache issues)
             if (isActiveValue !== undefined) {
-                await db.query(
-                    'UPDATE `tblBannerImages` SET isActive = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?',
-                    { replacements: [isActiveValue, id] }
-                );
+                if (isSuperAdmin(req)) {
+                    await db.query(
+                        'UPDATE `tblBannerImages` SET isActive = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?',
+                        { replacements: [isActiveValue, id] }
+                    );
+                } else {
+                    await db.query(
+                        'UPDATE `tblBannerImages` SET isActive = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ? AND companyID = ?',
+                        { replacements: [isActiveValue, id, req.auth.companyID] }
+                    );
+                }
             }
             if (Object.keys(updateData).length > 0) {
                 await Banner.update(updateData, {
-                    where: { id },
+                    where,
                     fields: Object.keys(updateData)
                 });
             }
-            const banner = await Banner.unscoped().findByPk(id);
+            const banner = await Banner.unscoped().findOne({ where });
             res.json({ success: true, message: 'Banner updated successfully', data: banner });
         } catch (error) {
             res.status(500).json({ success: false, message: error.message });
@@ -168,10 +197,16 @@ const contentController = {
     deleteBanner: async (req, res) => {
         try {
             const id = req.params.id;
-            const deleted = await Banner.destroy({ where: { id } });
+            const where = tenantWhere(req, { id });
+            const deleted = await Banner.destroy({ where });
             if (!deleted) {
-                // If destroy fails (maybe due to unscoped issues), try raw SQL
-                await db.query('DELETE FROM `tblBannerImages` WHERE id = ?', { replacements: [id] });
+                if (isSuperAdmin(req)) {
+                    await db.query('DELETE FROM `tblBannerImages` WHERE id = ?', { replacements: [id] });
+                } else {
+                    await db.query('DELETE FROM `tblBannerImages` WHERE id = ? AND companyID = ?', {
+                        replacements: [id, req.auth.companyID]
+                    });
+                }
             }
             res.json({ success: true, message: 'Banner deleted successfully' });
         } catch (error) {
@@ -180,9 +215,13 @@ const contentController = {
     },
     saveBannerPaths: async (req, res) => {
         try {
-            const { bannerPaths, companyID, userId, category } = req.body;
+            const { bannerPaths, userId, category } = req.body;
+            const companyID = resolveCreateCompanyID(req, req.body.companyID);
             if (!bannerPaths || !Array.isArray(bannerPaths)) {
                 return res.status(400).json({ success: false, message: 'bannerPaths must be an array' });
+            }
+            if (companyID == null) {
+                return res.status(400).json({ success: false, message: 'companyID is required' });
             }
 
             const banners = bannerPaths.map(path => ({
@@ -210,7 +249,7 @@ const contentController = {
             const iconName = body.iconName;
             const category = body.category;
             const userId = body.userId;
-            const companyID = body.companyID;
+            const companyID = resolveCreateCompanyID(req, body.companyID);
             const imageUrl = req.file ? req.file.filename : (body.imageUrl || body.imagePath || null);
             const payload = {
                 title: title ?? name,
@@ -219,7 +258,7 @@ const contentController = {
                 iconName,
                 category,
                 userId: userId !== undefined && userId !== '' ? parseInt(userId, 10) : null,
-                companyID: companyID !== undefined && companyID !== '' ? parseInt(companyID, 10) : null,
+                companyID: companyID !== undefined && companyID !== '' && companyID != null ? parseInt(companyID, 10) : null,
                 imageUrl
             };
             if (payload.companyID == null) {
@@ -233,7 +272,11 @@ const contentController = {
     },
     getServices: async (req, res) => {
         try {
-            const services = await Service.findAll({ where: { companyID: req.params.companyID } });
+            let companyID = req.params.companyID;
+            if ((companyID == null || companyID === '') && req.auth && !isSuperAdmin(req)) {
+                companyID = req.auth.companyID;
+            }
+            const services = await Service.findAll({ where: { companyID } });
             res.json({ success: true, data: services });
         } catch (error) {
             res.status(500).json({ success: false, message: error.message });
@@ -261,8 +304,12 @@ const contentController = {
             if (Object.keys(updateData).length === 0) {
                 return res.status(400).json({ success: false, message: 'No fields to update' });
             }
-            await Service.update(updateData, { where: { id: req.params.id } });
-            const service = await Service.findByPk(req.params.id);
+            const where = tenantWhere(req, { id: req.params.id });
+            const [updated] = await Service.update(updateData, { where });
+            if (!updated) {
+                return res.status(404).json({ success: false, message: 'Service not found' });
+            }
+            const service = await Service.findOne({ where });
             res.json({ success: true, message: 'Service updated successfully', data: service });
         } catch (error) {
             res.status(500).json({ success: false, message: error.message });
@@ -270,7 +317,8 @@ const contentController = {
     },
     deleteService: async (req, res) => {
         try {
-            const deleted = await Service.destroy({ where: { id: req.params.id } });
+            const where = tenantWhere(req, { id: req.params.id });
+            const deleted = await Service.destroy({ where });
             if (!deleted) {
                 return res.status(404).json({ success: false, message: 'Service not found' });
             }
@@ -284,7 +332,8 @@ const contentController = {
     addBlog: async (req, res) => {
         try {
             const body = req.body || {};
-            const { title, content, author, companyID, link, userId, category } = body;
+            const { title, content, author, link, userId, category } = body;
+            const companyID = resolveCreateCompanyID(req, body.companyID);
             const imageUrl = req.file
                 ? req.file.filename
                 : (body.imagePath || body.imageUrl || null);
@@ -309,7 +358,11 @@ const contentController = {
     },
     getBlogs: async (req, res) => {
         try {
-            const blogs = await Blog.findAll({ where: { companyID: req.params.companyID, isActive: 1 } });
+            let companyID = req.params.companyID;
+            if ((companyID == null || companyID === '') && req.auth && !isSuperAdmin(req)) {
+                companyID = req.auth.companyID;
+            }
+            const blogs = await Blog.findAll({ where: { companyID, isActive: 1 } });
             res.json({ success: true, data: blogs });
         } catch (error) {
             res.status(500).json({ success: false, message: error.message });
@@ -338,8 +391,12 @@ const contentController = {
             if (Object.keys(updateData).length === 0) {
                 return res.status(400).json({ success: false, message: 'No fields to update' });
             }
-            await Blog.update(updateData, { where: { id: req.params.id } });
-            const blog = await Blog.findByPk(req.params.id);
+            const where = tenantWhere(req, { id: req.params.id });
+            const [updated] = await Blog.update(updateData, { where });
+            if (!updated) {
+                return res.status(404).json({ success: false, message: 'Blog not found' });
+            }
+            const blog = await Blog.findOne({ where });
             res.json({ success: true, message: 'Blog updated successfully', data: blog });
         } catch (error) {
             res.status(500).json({ success: false, message: error.message });
@@ -347,7 +404,8 @@ const contentController = {
     },
     deleteBlog: async (req, res) => {
         try {
-            const deleted = await Blog.destroy({ where: { id: req.params.id } });
+            const where = tenantWhere(req, { id: req.params.id });
+            const deleted = await Blog.destroy({ where });
             if (!deleted) {
                 return res.status(404).json({ success: false, message: 'Blog not found' });
             }
@@ -360,7 +418,11 @@ const contentController = {
     // CONTACT MESSAGES
     addContactMessage: async (req, res) => {
         try {
-            const { name, email, subject, message, companyID } = req.body;
+            const { name, email, subject, message } = req.body;
+            // Public contact form may send companyID; if authenticated non-super, force auth company
+            const companyID = req.auth
+                ? resolveCreateCompanyID(req, req.body.companyID)
+                : req.body.companyID;
             const contact = await ContactMessage.create({ name, email, subject, message, companyID });
             res.status(201).json({ success: true, data: contact });
         } catch (error) {
@@ -369,7 +431,11 @@ const contentController = {
     },
     getContactMessages: async (req, res) => {
         try {
-            const messages = await ContactMessage.findAll({ where: { companyID: req.params.companyID } });
+            let companyID = req.params.companyID;
+            if ((companyID == null || companyID === '') && req.auth && !isSuperAdmin(req)) {
+                companyID = req.auth.companyID;
+            }
+            const messages = await ContactMessage.findAll({ where: { companyID } });
             res.json({ success: true, data: messages });
         } catch (error) {
             res.status(500).json({ success: false, message: error.message });
@@ -379,7 +445,8 @@ const contentController = {
     // REVIEWS
     addReview: async (req, res) => {
         try {
-            const { reviewerName, rating, reviewText, socialLink, companyID, userId } = req.body;
+            const { reviewerName, rating, reviewText, socialLink, userId } = req.body;
+            const companyID = resolveCreateCompanyID(req, req.body.companyID);
             if (!companyID) {
                 return res.status(400).json({ success: false, message: 'companyID is required' });
             }
@@ -398,7 +465,11 @@ const contentController = {
     },
     getReviews: async (req, res) => {
         try {
-            const reviews = await Review.findAll({ where: { companyID: req.query.companyID || req.params.companyID } });
+            let companyID = req.query.companyID || req.params.companyID;
+            if ((companyID == null || companyID === '') && req.auth && !isSuperAdmin(req)) {
+                companyID = req.auth.companyID;
+            }
+            const reviews = await Review.findAll({ where: { companyID } });
             res.json({ success: true, data: reviews });
         } catch (error) {
             res.status(500).json({ success: false, message: error.message });
@@ -417,8 +488,12 @@ const contentController = {
             if (Object.keys(updateData).length === 0) {
                 return res.status(400).json({ success: false, message: 'No fields to update' });
             }
-            await Review.update(updateData, { where: { id: req.params.id } });
-            const review = await Review.findByPk(req.params.id);
+            const where = tenantWhere(req, { id: req.params.id });
+            const [updated] = await Review.update(updateData, { where });
+            if (!updated) {
+                return res.status(404).json({ success: false, message: 'Review not found' });
+            }
+            const review = await Review.findOne({ where });
             res.json({ success: true, message: 'Review updated successfully', data: review });
         } catch (error) {
             res.status(500).json({ success: false, message: error.message });
@@ -426,7 +501,8 @@ const contentController = {
     },
     deleteReview: async (req, res) => {
         try {
-            const deleted = await Review.destroy({ where: { id: req.params.id } });
+            const where = tenantWhere(req, { id: req.params.id });
+            const deleted = await Review.destroy({ where });
             if (!deleted) {
                 return res.status(404).json({ success: false, message: 'Review not found' });
             }
@@ -439,8 +515,9 @@ const contentController = {
     // TEAM MEMBERS
     addTeamMember: async (req, res) => {
         try {
-            const { name, designation, bio, phoneNumber, tags, companyID } = req.body;
+            const { name, designation, bio, phoneNumber, tags } = req.body;
             const imageUrl = req.file ? req.file.filename : (req.body.imageUrl || null);
+            const companyID = resolveCreateCompanyID(req, req.body.companyID);
             if (!companyID) return res.status(400).json({ success: false, message: 'companyID is required' });
             const member = await TeamMember.create({ name, designation, bio, phoneNumber, tags, companyID, imageUrl });
             res.status(201).json({ success: true, data: member });
@@ -450,7 +527,10 @@ const contentController = {
     },
     getTeamMembers: async (req, res) => {
         try {
-            const { companyID } = req.params;
+            let { companyID } = req.params;
+            if ((companyID == null || companyID === '') && req.auth && !isSuperAdmin(req)) {
+                companyID = req.auth.companyID;
+            }
             const members = await TeamMember.findAll({ where: { companyID } });
             res.json({ success: true, data: members });
         } catch (error) {
@@ -474,8 +554,12 @@ const contentController = {
                 updateData.imageUrl = req.body.imageUrl;
             }
 
-            await TeamMember.update(updateData, { where: { id: req.params.id } });
-            const member = await TeamMember.findByPk(req.params.id);
+            const where = tenantWhere(req, { id: req.params.id });
+            const [updated] = await TeamMember.update(updateData, { where });
+            if (!updated) {
+                return res.status(404).json({ success: false, message: 'Member not found' });
+            }
+            const member = await TeamMember.findOne({ where });
             res.json({ success: true, data: member });
         } catch (error) {
             res.status(500).json({ success: false, message: error.message });
@@ -483,7 +567,8 @@ const contentController = {
     },
     deleteTeamMember: async (req, res) => {
         try {
-            const deleted = await TeamMember.destroy({ where: { id: req.params.id } });
+            const where = tenantWhere(req, { id: req.params.id });
+            const deleted = await TeamMember.destroy({ where });
             if (!deleted) return res.status(404).json({ success: false, message: 'Member not found' });
             res.json({ success: true, message: 'Member deleted successfully' });
         } catch (error) {

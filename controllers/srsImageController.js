@@ -1,11 +1,14 @@
 const SrsImage = require('../models/srsImage');
+const { isSuperAdmin, tenantWhere, resolveCreateCompanyID } = require('../utils/tenant');
 
 /**
- * GET /srs-images/all - Get all SRS images (no filters)
+ * GET /srs-images/all - Get all SRS images (scoped for non-super_admin)
  */
 exports.getAllSrsImages = async (req, res) => {
     try {
+        const where = isSuperAdmin(req) ? {} : tenantWhere(req);
         const rows = await SrsImage.findAll({
+            where,
             order: [['createdAt', 'DESC']]
         });
         const data = rows.map(r => {
@@ -26,10 +29,22 @@ exports.getAllSrsImages = async (req, res) => {
  */
 exports.getSrsImages = async (req, res) => {
     try {
-        const { companyID, userId } = req.query;
+        const { userId } = req.query;
+        let { companyID } = req.query;
+
+        if (!isSuperAdmin(req)) {
+            companyID = req.auth?.companyID;
+        }
+
         const where = {};
-        if (companyID !== undefined && companyID !== '') where.companyID = companyID;
+        if (companyID !== undefined && companyID !== '' && companyID != null) where.companyID = companyID;
         if (userId !== undefined && userId !== '') where.userId = userId;
+
+        // Non-super_admin must never get unscoped findAll
+        if (!isSuperAdmin(req) && !where.companyID) {
+            return res.status(400).json({ success: false, message: 'companyID is required' });
+        }
+
         const rows = await SrsImage.findAll({
             where: Object.keys(where).length ? where : {},
             order: [['createdAt', 'DESC']]
@@ -54,7 +69,8 @@ exports.getSrsImages = async (req, res) => {
 exports.getSrsImageById = async (req, res) => {
     try {
         const id = parseInt(req.params.id, 10);
-        const row = await SrsImage.findByPk(id);
+        const where = tenantWhere(req, { id });
+        const row = await SrsImage.findOne({ where });
         if (!row) {
             return res.status(404).json({ success: false, message: 'SRS image not found' });
         }
@@ -73,7 +89,7 @@ exports.getSrsImageById = async (req, res) => {
 exports.addSrsImage = async (req, res) => {
     try {
         const body = req.body || {};
-        const companyID = body.companyID;
+        const companyID = resolveCreateCompanyID(req, body.companyID);
         const userId = body.userId;
 
         if (!companyID) {
@@ -136,17 +152,20 @@ exports.updateSrsImage = async (req, res) => {
         if (body.title !== undefined) updateData.title = body.title === '' ? null : body.title;
         if (body.disc !== undefined) updateData.disc = body.disc === '' ? null : body.disc;
         if (body.location !== undefined) updateData.location = body.location === '' ? null : body.location;
-        if (body.companyID !== undefined) updateData.companyID = parseInt(body.companyID, 10);
+        if (isSuperAdmin(req) && body.companyID !== undefined) {
+            updateData.companyID = parseInt(body.companyID, 10);
+        }
         if (body.userId !== undefined) updateData.userId = body.userId === '' ? null : parseInt(body.userId, 10);
         if (body.isActive !== undefined && body.isActive !== null && body.isActive !== '') {
             const v = body.isActive;
             updateData.isActive = (v === 0 || v === '0' || v === false || String(v).toLowerCase() === 'false') ? 0 : 1;
         }
         const file = req.file || (req.files && req.files[0]);
+        const where = tenantWhere(req, { id });
         if (Array.isArray(body.images) && body.images.length > 0) {
             updateData.imageUrl = body.images;
         } else if (file) {
-            const existingRow = await SrsImage.findByPk(id);
+            const existingRow = await SrsImage.findOne({ where });
             const existing = existingRow && existingRow.imageUrl && existingRow.imageUrl.length ? existingRow.imageUrl : [];
             updateData.imageUrl = [...existing, file.filename];
         } else if (body.imagePath !== undefined || body.imageUrl !== undefined || body.image !== undefined) {
@@ -155,7 +174,7 @@ exports.updateSrsImage = async (req, res) => {
         if (Object.keys(updateData).length === 0) {
             return res.status(400).json({ success: false, message: 'No fields to update' });
         }
-        const row = await SrsImage.findByPk(id);
+        const row = await SrsImage.findOne({ where });
         if (!row) {
             return res.status(404).json({ success: false, message: 'SRS image not found' });
         }
@@ -176,7 +195,8 @@ exports.updateSrsImage = async (req, res) => {
 exports.deleteSrsImage = async (req, res) => {
     try {
         const id = parseInt(req.params.id, 10);
-        const row = await SrsImage.findByPk(id);
+        const where = tenantWhere(req, { id });
+        const row = await SrsImage.findOne({ where });
         if (!row) {
             return res.status(404).json({ success: false, message: 'SRS image not found' });
         }

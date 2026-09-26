@@ -2,48 +2,53 @@ const express = require('express');
 const router = express.Router();
 const contentController = require('../controllers/contentController');
 const upload = require('../middleware/upload');
+const { authenticate, requireCompanyAccess, optionalAuth } = require('../middleware/auth');
+
+// Public endpoints (website / review form)
+router.post('/contact', contentController.addContactMessage);
+router.post('/reviews', contentController.addReview);
+
+// All management endpoints require auth + company isolation
+router.use(authenticate);
 
 // Project Routes
-router.post('/projects', upload.single('image'), contentController.addProject);
-router.get('/projects/:companyID', contentController.getProjects);
-router.put('/projects/:id', upload.single('image'), contentController.updateProject);
-router.delete('/projects/:id', contentController.deleteProject);
+router.post('/projects', requireCompanyAccess, upload.single('image'), contentController.addProject);
+router.get('/projects/:companyID', requireCompanyAccess, contentController.getProjects);
+router.put('/projects/:id', requireCompanyAccess, upload.single('image'), contentController.updateProject);
+router.delete('/projects/:id', requireCompanyAccess, contentController.deleteProject);
 
 // Banner Routes
-router.post('/banners', upload.single('image'), contentController.addBanner);
-router.get('/banners/:companyID', contentController.getBanners);
-// PATCH without multer: use for JSON-only updates (e.g. isActive) so body is not consumed
-router.patch('/banners/:id', contentController.updateBanner);
-router.put('/banners/:id', upload.single('image'), contentController.updateBanner);
-router.delete('/banners/:id', contentController.deleteBanner);
+router.post('/banners', requireCompanyAccess, upload.single('image'), contentController.addBanner);
+router.get('/banners/:companyID', requireCompanyAccess, contentController.getBanners);
+router.patch('/banners/:id', requireCompanyAccess, contentController.updateBanner);
+router.put('/banners/:id', requireCompanyAccess, upload.single('image'), contentController.updateBanner);
+router.delete('/banners/:id', requireCompanyAccess, contentController.deleteBanner);
 
 // Service Routes
-router.post('/services', upload.single('image'), contentController.addService);
-router.get('/services/:companyID', contentController.getServices);
-router.put('/services/:id', upload.single('image'), contentController.updateService);
-router.delete('/services/:id', contentController.deleteService);
+router.post('/services', requireCompanyAccess, upload.single('image'), contentController.addService);
+router.get('/services/:companyID', requireCompanyAccess, contentController.getServices);
+router.put('/services/:id', requireCompanyAccess, upload.single('image'), contentController.updateService);
+router.delete('/services/:id', requireCompanyAccess, contentController.deleteService);
 
 // Blog Routes
-router.post('/blogs', upload.single('image'), contentController.addBlog);
-router.get('/blogs/:companyID', contentController.getBlogs);
-router.put('/blogs/:id', upload.single('image'), contentController.updateBlog);
-router.delete('/blogs/:id', contentController.deleteBlog);
+router.post('/blogs', requireCompanyAccess, upload.single('image'), contentController.addBlog);
+router.get('/blogs/:companyID', requireCompanyAccess, contentController.getBlogs);
+router.put('/blogs/:id', requireCompanyAccess, upload.single('image'), contentController.updateBlog);
+router.delete('/blogs/:id', requireCompanyAccess, contentController.deleteBlog);
 
-// Contact Routes
-router.post('/contact', contentController.addContactMessage);
-router.get('/contact/:companyID', contentController.getContactMessages);
+// Contact (authenticated list)
+router.get('/contact/:companyID', requireCompanyAccess, contentController.getContactMessages);
 
-// Review Routes
-router.post('/reviews', contentController.addReview);
+// Reviews
 router.get('/reviews', contentController.getReviews);
-router.get('/reviews/:companyID', contentController.getReviews);
-router.put('/reviews/:id', contentController.updateReview);
-router.delete('/reviews/:id', contentController.deleteReview);
+router.get('/reviews/:companyID', requireCompanyAccess, contentController.getReviews);
+router.put('/reviews/:id', requireCompanyAccess, contentController.updateReview);
+router.delete('/reviews/:id', requireCompanyAccess, contentController.deleteReview);
 
-// Team Member Routes
-router.post('/team-members', upload.single('image'), contentController.addTeamMember);
-router.get('/team-members/:companyID', contentController.getTeamMembers);
-router.put('/team-members/:id', upload.single('image'), contentController.updateTeamMember);
-router.delete('/team-members/:id', contentController.deleteTeamMember);
+// Team members
+router.post('/team-members', requireCompanyAccess, upload.single('image'), contentController.addTeamMember);
+router.get('/team-members/:companyID', requireCompanyAccess, contentController.getTeamMembers);
+router.put('/team-members/:id', requireCompanyAccess, upload.single('image'), contentController.updateTeamMember);
+router.delete('/team-members/:id', requireCompanyAccess, contentController.deleteTeamMember);
 
 module.exports = router;

@@ -1,5 +1,8 @@
+const bcrypt = require('bcrypt');
 const Company = require('../models/company');
 const User = require('../models/user');
+
+const DEFAULT_ADMIN_PASSWORD = 'Password#1';
 
 const companyController = {
     getAllCompanies: async (req, res) => {
@@ -30,6 +33,7 @@ const companyController = {
             
             // Sync Admin to User Table
             if (updateData.adminName && updateData.adminPhone) {
+                const hashedPassword = await bcrypt.hash(DEFAULT_ADMIN_PASSWORD, 10);
                 const [adminUser, created] = await User.findOrCreate({
                     where: { companyID: companyID, role: 'admin' },
                     defaults: {
@@ -39,7 +43,7 @@ const companyController = {
                         location: updateData.adminLocation || updateData.location || '',
                         category: updateData.adminCategory || updateData.category || 'Builders',
                         isActive: 1,
-                        password: 'Password#1',
+                        password: hashedPassword,
                         createdOn: new Date(),
                         updatedOn: new Date()
                     }
@@ -69,6 +73,7 @@ const companyController = {
             
             // Sync Admin to User Table
             if (req.body.adminName && req.body.adminPhone) {
+                const hashedPassword = await bcrypt.hash(DEFAULT_ADMIN_PASSWORD, 10);
                 await User.create({
                     name: req.body.adminName,
                     phoneNumber: req.body.adminPhone,
@@ -77,7 +82,7 @@ const companyController = {
                     category: req.body.adminCategory || req.body.category || 'Builders',
                     isActive: 1,
                     role: 'admin',
-                    password: 'Password#1',
+                    password: hashedPassword,
                     createdOn: new Date(),
                     updatedOn: new Date()
                 });

@@ -42,6 +42,7 @@ app.use('/banners', bannersRoutes);
 app.use('/menu', menuRoutes);
 app.use('/category', categoryRoutes);
 app.use('/companies', require('./routes/companies'));
+app.use('/rbac', require('./routes/rbac'));
 
 // Root endpoint - show Buildnex brand image
 app.get('/', (req, res) => {

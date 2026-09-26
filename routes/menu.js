@@ -1,11 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const menuController = require('../controllers/menuController');
+const { authenticate, requireCompanyAccess } = require('../middleware/auth');
 
-// Get all menus
-router.get('/', menuController.getAllMenus);
-
-// Get menu by companyID
-router.get('/:companyID', menuController.getMenuByCompanyID);
+router.use(authenticate);
+router.get('/', requireCompanyAccess, menuController.getAllMenus);
+router.get('/:companyID', requireCompanyAccess, menuController.getMenuByCompanyID);
 
 module.exports = router;
