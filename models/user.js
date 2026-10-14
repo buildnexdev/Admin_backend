@@ -1,7 +1,7 @@
 const { DataTypes } = require('sequelize');
 const db = require('../config/db.config');
 
-const User = db.define('user', {
+const User = db.define('tblUser', {
     userId: {
         type: DataTypes.BIGINT(20),
         allowNull: false,
@@ -49,8 +49,9 @@ const User = db.define('user', {
         allowNull: true
     }
 }, {
-    tableName: 'user',
-    timestamps: false
+    tableName: 'tblUser',
+    timestamps: false,
+    freezeTableName: true
 });
 
 module.exports = User;
