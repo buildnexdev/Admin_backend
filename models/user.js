@@ -2,56 +2,112 @@ const { DataTypes } = require('sequelize');
 const db = require('../config/db.config');
 
 const User = db.define('tblUser', {
-    userId: {
-        type: DataTypes.BIGINT(20),
+    id: {
+        type: DataTypes.BIGINT.UNSIGNED,
         allowNull: false,
         primaryKey: true,
-        autoIncrement: true
+        autoIncrement: true,
     },
     name: {
+        type: DataTypes.STRING(120),
+        allowNull: false,
+    },
+    email: {
+        type: DataTypes.STRING(190),
+        allowNull: true,
+        unique: true,
+    },
+    phone: {
+        type: DataTypes.STRING(20),
+        allowNull: true,
+        unique: true,
+    },
+    password_hash: {
         type: DataTypes.STRING(100),
-        allowNull: false
+        allowNull: true,
+    },
+    status: {
+        type: DataTypes.ENUM('ACTIVE', 'INACTIVE', 'LOCKED'),
+        allowNull: false,
+        defaultValue: 'ACTIVE',
+    },
+    avatar_key: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+    },
+    email_verified_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+    },
+    phone_verified_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+    },
+    last_login_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+    },
+    failed_logins: {
+        type: DataTypes.INTEGER.UNSIGNED,
+        allowNull: false,
+        defaultValue: 0,
+    },
+    locked_until: {
+        type: DataTypes.DATE,
+        allowNull: true,
+    },
+    token_version: {
+        type: DataTypes.INTEGER.UNSIGNED,
+        allowNull: false,
+        defaultValue: 0,
+    },
+    created_at: {
+        type: DataTypes.DATE,
+        allowNull: false,
+        defaultValue: DataTypes.NOW,
+    },
+    updated_at: {
+        type: DataTypes.DATE,
+        allowNull: false,
+        defaultValue: DataTypes.NOW,
+    },
+    deleted_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+    },
+    // Virtual getters for compatibility
+    userId: {
+        type: DataTypes.VIRTUAL,
+        get() {
+            return this.getDataValue('id');
+        },
     },
     phoneNumber: {
-        type: DataTypes.BIGINT(10),
-        allowNull: false
+        type: DataTypes.VIRTUAL,
+        get() {
+            return this.getDataValue('phone');
+        },
     },
     password: {
-        type: DataTypes.STRING(255),
-        allowNull: false
-    },
-    companyID: {
-        type: DataTypes.BIGINT(20),
-        allowNull: false
-    },
-    location: {
-        type: DataTypes.TEXT,
-        allowNull: false
+        type: DataTypes.VIRTUAL,
+        get() {
+            return this.getDataValue('password_hash');
+        },
     },
     isActive: {
-        type: DataTypes.TINYINT(4),
-        allowNull: false
+        type: DataTypes.VIRTUAL,
+        get() {
+            return this.getDataValue('status') === 'ACTIVE' ? 1 : 0;
+        },
     },
-    createdOn: {
-        type: DataTypes.DATE,
-        allowNull: false
-    },
-    updatedOn: {
-        type: DataTypes.DATE,
-        allowNull: false
-    },
-    role: {
-        type: DataTypes.STRING(50),
-        defaultValue: 'user'
-    },
-    category: {
-        type: DataTypes.ENUM('Builders', 'Photography', 'School'),
-        allowNull: true
-    }
 }, {
     tableName: 'tblUser',
-    timestamps: false,
-    freezeTableName: true
+    timestamps: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+    deletedAt: 'deleted_at',
+    paranoid: true,
+    freezeTableName: true,
 });
 
 module.exports = User;

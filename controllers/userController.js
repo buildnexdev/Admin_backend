@@ -1,5 +1,6 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const { Op } = require('sequelize');
 const User = require('../models/user');
 const { getEffectivePermissions, logAudit } = require('../services/permissionService');
 require('dotenv').config();
@@ -17,9 +18,10 @@ async function verifyPassword(plain, stored) {
 
 async function upgradePasswordIfNeeded(user, plain) {
     try {
-        if (!looksLikeBcrypt(user.password)) {
+        const stored = user.password_hash || user.password;
+        if (!looksLikeBcrypt(stored)) {
             const hash = await bcrypt.hash(plain, 10);
-            await user.update({ password: hash });
+            await user.update({ password_hash: hash });
         }
     } catch (e) {
         console.warn('[LOGIN] password upgrade skipped:', e.message);
@@ -28,8 +30,8 @@ async function upgradePasswordIfNeeded(user, plain) {
 
 exports.login = async (req, res) => {
     try {
-        const { phone, password, email, username } = req.body;
-        const identifier = phone || email || username;
+        const { phone, password, email, username, phoneNumber } = req.body;
+        const identifier = phone || phoneNumber || email || username;
 
         if (!identifier || !password) {
             return res.status(400).json({
@@ -40,7 +42,12 @@ exports.login = async (req, res) => {
         }
 
         const user = await User.findOne({
-            where: { phoneNumber: identifier },
+            where: {
+                [Op.or]: [
+                    { phone: identifier },
+                    { email: identifier },
+                ],
+            },
         });
 
         if (!user) {
@@ -51,16 +58,23 @@ exports.login = async (req, res) => {
             });
         }
 
-        if (Number(user.isActive) === 0) {
+        const status = user.status || (Number(user.isActive) === 1 ? 'ACTIVE' : 'INACTIVE');
+        if (status !== 'ACTIVE') {
             return res.status(403).json({
                 success: false,
                 status: false,
-                message: 'Account is inactive',
+                message: status === 'LOCKED' ? 'Account is locked' : 'Account is inactive',
             });
         }
 
-        const ok = await verifyPassword(password, user.password);
+        const storedPassword = user.password_hash || user.password;
+        const ok = await verifyPassword(password, storedPassword);
         if (!ok) {
+            try {
+                await user.increment('failed_logins');
+            } catch (failErr) {
+                // ignore
+            }
             return res.status(401).json({
                 success: false,
                 status: false,
@@ -69,6 +83,15 @@ exports.login = async (req, res) => {
         }
 
         await upgradePasswordIfNeeded(user, password);
+
+        try {
+            await user.update({
+                last_login_at: new Date(),
+                failed_logins: 0,
+            });
+        } catch (metaErr) {
+            console.warn('[LOGIN] update last_login_at skipped:', metaErr.message);
+        }
 
         const jwtSecret = process.env.JWT_SECRET;
         if (!jwtSecret) {
@@ -80,11 +103,31 @@ exports.login = async (req, res) => {
             });
         }
 
+        const userId = user.id || user.userId;
+        let companyID = user.companyID || null;
+        let role = user.role || 'user';
+
+        // Attempt to resolve company and role from tblUserRole if available
+        try {
+            const TblUserRole = require('../models/tblUserRole');
+            const userRole = await TblUserRole.findOne({ where: { UserId: userId } });
+            if (userRole) {
+                if (userRole.CompanyId) companyID = userRole.CompanyId;
+                const TblRole = require('../models/tblRole');
+                const roleRow = await TblRole.findByPk(userRole.RoleId);
+                if (roleRow?.Code) {
+                    role = roleRow.Code;
+                }
+            }
+        } catch (roleErr) {
+            console.warn('[LOGIN] role lookup skipped:', roleErr.message);
+        }
+
         const token = jwt.sign(
             {
-                id: user.userId,
-                companyID: user.companyID,
-                role: user.role,
+                id: userId,
+                companyID,
+                role,
             },
             jwtSecret,
             { expiresIn: '7d' }
@@ -92,9 +135,17 @@ exports.login = async (req, res) => {
 
         const plain = user.get({ plain: true });
         delete plain.password;
+        delete plain.password_hash;
 
-        const Company = require('../models/company');
-        const company = await Company.findByPk(plain.companyID);
+        let company = null;
+        if (companyID) {
+            try {
+                const Company = require('../models/company');
+                company = await Company.findByPk(companyID);
+            } catch (compErr) {
+                console.warn('[LOGIN] company lookup skipped:', compErr.message);
+            }
+        }
 
         // Normalize role for frontend RBAC
         const roleMap = {
@@ -104,23 +155,23 @@ exports.login = async (req, res) => {
             staff: 'STAFF',
             user: 'USER',
         };
-        const roleCode = roleMap[String(plain.role || '').toLowerCase()] || String(plain.role || 'USER').toUpperCase();
+        const roleCode = roleMap[String(role || '').toLowerCase()] || String(role || 'USER').toUpperCase();
 
         let permissions = [];
         try {
-            permissions = await getEffectivePermissions(plain.userId, plain.companyID, plain.role);
+            permissions = await getEffectivePermissions(userId, companyID, role);
         } catch (permErr) {
             console.warn('[LOGIN] permissions lookup skipped:', permErr.message);
         }
 
         try {
             await logAudit({
-                userId: plain.userId,
-                companyId: plain.companyID,
+                userId,
+                companyId: companyID,
                 action: 'LOGIN',
                 module: 'AUTH',
-                recordId: plain.userId,
-                description: `User ${plain.name || plain.phoneNumber} logged in`,
+                recordId: userId,
+                description: `User ${plain.name || plain.phone || plain.email} logged in`,
                 ip: req.ip,
             });
         } catch (auditErr) {
@@ -134,18 +185,23 @@ exports.login = async (req, res) => {
             token,
             permissions,
             data: {
-                userId: plain.userId,
+                userId,
+                id: userId,
                 name: plain.name,
-                phoneNumber: plain.phoneNumber,
-                companyID: plain.companyID,
+                email: plain.email,
+                phoneNumber: plain.phone || plain.phoneNumber,
+                phone: plain.phone,
+                companyID,
                 companyName: company ? company.name : 'Corporate Office',
-                location: plain.location,
-                isActive: plain.isActive,
-                createdOn: plain.createdOn,
-                updatedOn: plain.updatedOn,
-                role: plain.role,
+                location: plain.location || '',
+                isActive: status === 'ACTIVE' ? 1 : 0,
+                status,
+                avatarKey: plain.avatar_key,
+                createdOn: plain.created_at || plain.createdOn,
+                updatedOn: plain.updated_at || plain.updatedOn,
+                role,
                 roleCode,
-                category: plain.category,
+                category: plain.category || null,
                 permissions,
             },
         });

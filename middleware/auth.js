@@ -133,18 +133,28 @@ exports.authenticate = async (req, res, next) => {
 
         const plain = user.get({ plain: true });
         delete plain.password;
+        delete plain.password_hash;
+
+        const effectiveUserId = plain.id || plain.userId || userId;
+        const effectiveCompanyID = plain.companyID || payload.companyID || null;
+        const effectiveRole = plain.role || payload.role || 'user';
+
+        plain.userId = effectiveUserId;
+        plain.phoneNumber = plain.phone || plain.phoneNumber;
+        plain.companyID = effectiveCompanyID;
+        plain.role = effectiveRole;
 
         let permissions = [];
         try {
-            permissions = await getEffectivePermissions(plain.userId, plain.companyID, plain.role);
+            permissions = await getEffectivePermissions(effectiveUserId, effectiveCompanyID, effectiveRole);
         } catch (permErr) {
             console.warn('authenticate permissions:', permErr.message);
         }
 
         req.auth = {
-            userId: plain.userId,
-            companyID: plain.companyID,
-            role: plain.role,
+            userId: effectiveUserId,
+            companyID: effectiveCompanyID,
+            role: effectiveRole,
             permissions,
             user: plain,
         };
