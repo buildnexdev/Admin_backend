@@ -25,7 +25,7 @@ const contentController = {
                 return res.status(400).json({ success: false, message: 'companyID is required' });
             }
             const imageUrl = req.file
-                ? req.file.filename
+                ? (req.file.key || req.file.filename)
                 : (body.imagePath || body.imageUrl || null);
             const project = await Project.create({ title, description, category, companyID, imageUrl });
             res.status(201).json({ success: true, data: project });
@@ -58,7 +58,7 @@ const contentController = {
                 updateData.isActive = (v === 0 || v === '0' || v === false || String(v).toLowerCase() === 'false') ? 0 : 1;
             }
             if (req.file) {
-                updateData.imageUrl = req.file.filename;
+                updateData.imageUrl = req.file.key || req.file.filename;
             } else if (body.imagePath !== undefined || body.imageUrl !== undefined) {
                 updateData.imageUrl = body.imagePath || body.imageUrl;
             }
@@ -98,7 +98,7 @@ const contentController = {
                 return res.status(400).json({ success: false, message: 'companyID is required' });
             }
             const imageUrl = req.file
-                ? req.file.filename
+                ? (req.file.key || req.file.filename)
                 : (imagePath || req.body.imageUrl || null);
             if (!imageUrl) return res.status(400).json({ success: false, message: 'Image is required (send file or imagePath)' });
 
@@ -151,7 +151,7 @@ const contentController = {
                 updateData.isActive = (v === 0 || v === '0' || v === false || String(v).toLowerCase() === 'false') ? 0 : 1;
             }
             if (req.file) {
-                updateData.imageUrl = req.file.filename;
+                updateData.imageUrl = req.file.key || req.file.filename;
             } else if (body.imagePath !== undefined || body.imageUrl !== undefined || body.image !== undefined) {
                 updateData.imageUrl = body.imagePath || body.imageUrl || body.image;
             }
@@ -250,7 +250,7 @@ const contentController = {
             const category = body.category;
             const userId = body.userId;
             const companyID = resolveCreateCompanyID(req, body.companyID);
-            const imageUrl = req.file ? req.file.filename : (body.imageUrl || body.imagePath || null);
+            const imageUrl = req.file ? (req.file.key || req.file.filename) : (body.imageUrl || body.imagePath || null);
             const payload = {
                 title: title ?? name,
                 name: name ?? title,
@@ -292,7 +292,7 @@ const contentController = {
             if (body.iconName !== undefined) updateData.iconName = body.iconName;
             if (body.category !== undefined) updateData.category = body.category;
             if (body.userId !== undefined) updateData.userId = body.userId === '' ? null : parseInt(body.userId, 10);
-            if (req.file) updateData.imageUrl = req.file.filename;
+            if (req.file) updateData.imageUrl = req.file.key || req.file.filename;
             else if (body.imagePath !== undefined || body.imageUrl !== undefined || body.image !== undefined) {
                 updateData.imageUrl = body.imagePath || body.imageUrl || body.image;
             }
@@ -335,7 +335,7 @@ const contentController = {
             const { title, content, author, link, userId, category } = body;
             const companyID = resolveCreateCompanyID(req, body.companyID);
             const imageUrl = req.file
-                ? req.file.filename
+                ? (req.file.key || req.file.filename)
                 : (body.imagePath || body.imageUrl || null);
             const payload = {
                 title,
@@ -384,7 +384,7 @@ const contentController = {
                 updateData.isActive = (v === 0 || v === '0' || v === false || String(v).toLowerCase() === 'false') ? 0 : 1;
             }
             if (req.file) {
-                updateData.imageUrl = req.file.filename;
+                updateData.imageUrl = req.file.key || req.file.filename;
             } else if (body.imagePath !== undefined || body.imageUrl !== undefined) {
                 updateData.imageUrl = body.imagePath || body.imageUrl;
             }
@@ -516,7 +516,7 @@ const contentController = {
     addTeamMember: async (req, res) => {
         try {
             const { name, designation, bio, phoneNumber, tags } = req.body;
-            const imageUrl = req.file ? req.file.filename : (req.body.imageUrl || null);
+            const imageUrl = req.file ? (req.file.key || req.file.filename) : (req.body.imageUrl || null);
             const companyID = resolveCreateCompanyID(req, req.body.companyID);
             if (!companyID) return res.status(400).json({ success: false, message: 'companyID is required' });
             const member = await TeamMember.create({ name, designation, bio, phoneNumber, tags, companyID, imageUrl });
@@ -549,7 +549,7 @@ const contentController = {
             if (isActive !== undefined) updateData.isActive = isActive;
 
             if (req.file) {
-                updateData.imageUrl = req.file.filename;
+                updateData.imageUrl = req.file.key || req.file.filename;
             } else if (req.body.imageUrl !== undefined) {
                 updateData.imageUrl = req.body.imageUrl;
             }

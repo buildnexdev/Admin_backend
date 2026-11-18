@@ -29,7 +29,7 @@ exports.uploadHomePageImage = async (req, res) => {
         const now = new Date();
 
         const payload = {
-            imageUrl: req.file.filename,
+            imageUrl: req.file.key || req.file.filename,
             category: finalCategory,
             companyID: parseInt(finalCompanyId, 10),
             userId: parseInt(finalUserId, 10),
