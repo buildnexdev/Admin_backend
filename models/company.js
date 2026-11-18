@@ -97,7 +97,7 @@ const Company = db.define('Company', {
         field: 'updatedOn'
     }
 }, {
-    tableName: 'company',
+    tableName: 'tblCompany',
     timestamps: false // Manual timestamps in the table
 });
 

@@ -33,7 +33,7 @@ const Project = db.define('Project', {
         defaultValue: 1
     }
 }, {
-    tableName: 'projects',
+    tableName: 'tblProject',
     timestamps: true
 });
 

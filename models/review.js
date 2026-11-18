@@ -37,7 +37,7 @@ const Review = db.define('Review', {
         defaultValue: 1
     }
 }, {
-    tableName: 'reviews',
+    tableName: 'tblReview',
     timestamps: true
 });
 

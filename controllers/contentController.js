@@ -172,12 +172,12 @@ const contentController = {
             if (isActiveValue !== undefined) {
                 if (isSuperAdmin(req)) {
                     await db.query(
-                        'UPDATE `tblBannerImages` SET isActive = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?',
+                        'UPDATE `tblBanner` SET isActive = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?',
                         { replacements: [isActiveValue, id] }
                     );
                 } else {
                     await db.query(
-                        'UPDATE `tblBannerImages` SET isActive = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ? AND companyID = ?',
+                        'UPDATE `tblBanner` SET isActive = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ? AND companyID = ?',
                         { replacements: [isActiveValue, id, req.auth.companyID] }
                     );
                 }
@@ -201,9 +201,9 @@ const contentController = {
             const deleted = await Banner.destroy({ where });
             if (!deleted) {
                 if (isSuperAdmin(req)) {
-                    await db.query('DELETE FROM `tblBannerImages` WHERE id = ?', { replacements: [id] });
+                    await db.query('DELETE FROM `tblBanner` WHERE id = ?', { replacements: [id] });
                 } else {
-                    await db.query('DELETE FROM `tblBannerImages` WHERE id = ? AND companyID = ?', {
+                    await db.query('DELETE FROM `tblBanner` WHERE id = ? AND companyID = ?', {
                         replacements: [id, req.auth.companyID]
                     });
                 }

@@ -33,7 +33,7 @@ const ContactMessage = db.define('ContactMessage', {
         defaultValue: 0
     }
 }, {
-    tableName: 'contact_messages',
+    tableName: 'tblContact',
     timestamps: true
 });
 

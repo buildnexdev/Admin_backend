@@ -38,7 +38,7 @@ const HomePageImage = db.define('home_page_images', {
         allowNull: false
     }
 }, {
-    tableName: 'home_page_images',
+    tableName: 'tblHomePageImage',
     timestamps: false
 });
 

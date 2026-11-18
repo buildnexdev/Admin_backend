@@ -45,7 +45,7 @@ const Service = db.define('Service', {
         defaultValue: 1
     }
 }, {
-    tableName: 'services',
+    tableName: 'tblService',
     timestamps: true
 });
 

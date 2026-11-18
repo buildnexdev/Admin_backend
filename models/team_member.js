@@ -41,7 +41,7 @@ const TeamMember = db.define('TeamMember', {
         defaultValue: 1
     }
 }, {
-    tableName: 'team_members',
+    tableName: 'tblTeamMember',
     timestamps: true
 });
 

@@ -73,7 +73,7 @@ const Menu = db.define('Menu', {
         defaultValue: 0
     }
 }, {
-    tableName: 'menu',
+    tableName: 'tblMenu',
     timestamps: false
 });
 

@@ -52,7 +52,7 @@ const SrsImage = db.define('SrsImage', {
         defaultValue: 1
     }
 }, {
-    tableName: 'srs_images',
+    tableName: 'tblSrsImage',
     timestamps: true
 });
 

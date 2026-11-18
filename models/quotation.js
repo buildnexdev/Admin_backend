@@ -46,7 +46,7 @@ const Quotation = db.define('Quotation', {
     }
 
 }, {
-    tableName: 'quotations',
+    tableName: 'tblQuotation',
     timestamps: true
 });
 

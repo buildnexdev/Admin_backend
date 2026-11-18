@@ -27,7 +27,7 @@ const Category = db.define('Category', {
         defaultValue: DataTypes.NOW
     }
 }, {
-    tableName: 'categories',
+    tableName: 'tblCategory',
     timestamps: false
 });
 

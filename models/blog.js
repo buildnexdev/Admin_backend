@@ -45,7 +45,7 @@ const Blog = db.define('Blog', {
         defaultValue: 1
     }
 }, {
-    tableName: 'blogs',
+    tableName: 'tblBlog',
     timestamps: true
 });
 

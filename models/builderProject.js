@@ -46,7 +46,7 @@ const BuilderProject = db.define('builder_projects', {
         allowNull: false
     }
 }, {
-    tableName: 'builder_projects',
+    tableName: 'tblBuilderProject',
     timestamps: false
 });
 
