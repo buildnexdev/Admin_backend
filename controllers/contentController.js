@@ -197,20 +197,35 @@ const contentController = {
     deleteBanner: async (req, res) => {
         try {
             const id = req.params.id;
-            const where = tenantWhere(req, { id });
-            const deleted = await Banner.destroy({ where });
-            if (!deleted) {
-                if (isSuperAdmin(req)) {
-                    await db.query('DELETE FROM `tblBanner` WHERE id = ?', { replacements: [id] });
-                } else {
-                    await db.query('DELETE FROM `tblBanner` WHERE id = ? AND companyID = ?', {
-                        replacements: [id, req.auth.companyID]
-                    });
-                }
+            const companyID = req.auth?.companyID;
+            const isSuper = isSuperAdmin(req);
+
+            console.log(`[DELETE BANNER] id: ${id}, companyID: ${companyID}, isSuperAdmin: ${isSuper}`);
+
+            let sql = 'DELETE FROM `tblBanner` WHERE (`id` = ? OR `bannerId` = ?)';
+            let replacements = [id, id];
+
+            if (!isSuper && companyID) {
+                sql += ' AND `companyID` = ?';
+                replacements.push(companyID);
             }
-            res.json({ success: true, message: 'Banner deleted successfully' });
+
+            try {
+                await db.query(sql, { replacements });
+            } catch (queryErr) {
+                let fallbackSql = 'DELETE FROM `tblBanner` WHERE `id` = ?';
+                let fallbackRepl = [id];
+                if (!isSuper && companyID) {
+                    fallbackSql += ' AND `companyID` = ?';
+                    fallbackRepl.push(companyID);
+                }
+                await db.query(fallbackSql, { replacements: fallbackRepl });
+            }
+
+            return res.json({ success: true, message: 'Banner deleted successfully' });
         } catch (error) {
-            res.status(500).json({ success: false, message: error.message });
+            console.error('[DELETE BANNER ERROR]:', error);
+            return res.status(500).json({ success: false, message: error.message });
         }
     },
     saveBannerPaths: async (req, res) => {
