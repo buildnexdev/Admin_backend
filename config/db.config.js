@@ -1,4 +1,6 @@
 const { Sequelize } = require('sequelize');
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 if (!process.env.DB_NAME || !process.env.DB_USER || !process.env.DB_HOST) {
     console.warn('[DB] Warning: DB_NAME, DB_USER, and/or DB_HOST are not fully set in environment');
