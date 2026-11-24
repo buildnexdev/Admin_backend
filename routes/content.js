@@ -7,6 +7,7 @@ const { authenticate, requireCompanyAccess, optionalAuth } = require('../middlew
 // Public endpoints (website / review form)
 router.post('/contact', contentController.addContactMessage);
 router.post('/reviews', contentController.addReview);
+router.get('/team-members/:companyID', optionalAuth, contentController.getTeamMembers);
 
 // All management endpoints require auth + company isolation
 router.use(authenticate);
@@ -47,7 +48,6 @@ router.delete('/reviews/:id', requireCompanyAccess, contentController.deleteRevi
 
 // Team members
 router.post('/team-members', requireCompanyAccess, upload.single('image'), contentController.addTeamMember);
-router.get('/team-members/:companyID', requireCompanyAccess, contentController.getTeamMembers);
 router.put('/team-members/:id', requireCompanyAccess, upload.single('image'), contentController.updateTeamMember);
 router.delete('/team-members/:id', requireCompanyAccess, contentController.deleteTeamMember);
 
